@@ -204,7 +204,7 @@ string CheckNullable(Column col)
 
 string GetConnectionString(ref string connectionStringName, out string providerName)
 {
-    var _CurrentProject = GetCurrentProject();
+    //TJB removed because it' not used, and no longer works since ENVDTE is failing var _CurrentProject = GetCurrentProject();
 
 	providerName=null;
     
@@ -262,8 +262,9 @@ void InitConnectionString()
 		if(_connectionString.Contains("|DataDirectory|"))
 		{
 			//have to replace it
-			string dataFilePath=GetDataDirectory();
-			_connectionString=_connectionString.Replace("|DataDirectory|",dataFilePath);
+			throw new ApplicationException("TJB Change: datadirectory not supported because it requires ENVDTE which doesn't seem to work anymore");
+			//string dataFilePath=GetDataDirectory();
+			//_connectionString=_connectionString.Replace("|DataDirectory|",dataFilePath);
 		}    
 	}
 }
@@ -285,7 +286,8 @@ public string ProviderName
         return _providerName;
     }
 }
-
+//TJB removed EnvDTE because it doesn't seem to run in T4 with .net core anymore
+/*
 public EnvDTE.Project GetCurrentProject()  {
 
 	IServiceProvider _ServiceProvider = Host as IServiceProvider;
@@ -307,20 +309,23 @@ public EnvDTE.Project GetCurrentProject()  {
 	return dteProject;
 
 }
+*/
 
 private string GetProjectPath()
 {
-	EnvDTE.Project project = GetCurrentProject();
-	if (project != null)
-	{
-		System.IO.FileInfo info = new System.IO.FileInfo(project.FullName);
-		return info.Directory.FullName;
-	}
-	else
-	{
+			
+//TJB removed EnvDTE because it doesn't seem to run in T4 with .net core anymore
+	//EnvDTE.Project project = GetCurrentProject();
+	//if (project != null)
+	//{
+	//	System.IO.FileInfo info = new System.IO.FileInfo(project.FullName);
+	//	return info.Directory.FullName;
+	//}
+	//else
+	//{
 		string currentDir = System.IO.Path.GetDirectoryName(Host.TemplateFile);
 		return GetProjectPath(currentDir);
-	}
+	//}
 }
 
 private string GetProjectPath(string startingSearchDir)
@@ -344,18 +349,19 @@ private string GetProjectPath(string startingSearchDir)
 
 private string GetConfigPath()
 {
-	EnvDTE.Project project = GetCurrentProject();
-	if (project != null)
-	{
-		foreach (EnvDTE.ProjectItem item in project.ProjectItems)
-		{
-			// if it is the app.config file, then open it up
-			if (item.Name.Equals("App.config",StringComparison.InvariantCultureIgnoreCase) || item.Name.Equals("Web.config",StringComparison.InvariantCultureIgnoreCase))
-				return GetProjectPath() + "\\" + item.Name;
-		}
-	}
-	else
-	{
+	//TJB removed EnvDTE because it doesn't seem to run in T4 with .net core anymore
+	//EnvDTE.Project project = GetCurrentProject();
+	//if (project != null)
+	//{
+	//	foreach (EnvDTE.ProjectItem item in project.ProjectItems)
+	//	{
+	//		// if it is the app.config file, then open it up
+	//		if (item.Name.Equals("App.config",StringComparison.InvariantCultureIgnoreCase) || item.Name.Equals("Web.config",StringComparison.InvariantCultureIgnoreCase))
+	//			return GetProjectPath() + "\\" + item.Name;
+	//	}
+	//}
+	//else
+	//{
 		string projectDir = GetProjectPath();
 		var configFiles = Directory.GetFiles(projectDir, "*.config");
 		foreach (var configFile in configFiles)
@@ -366,21 +372,22 @@ private string GetConfigPath()
 				return configFile;
 			}
 		}
-	}
+	//}
 	return String.Empty;
 }
 
 public string GetDataDirectory()
 {
-	EnvDTE.Project project=GetCurrentProject();
-	if (project != null)
-	{
-		return System.IO.Path.GetDirectoryName(project.FileName)+"\\App_Data\\";
-	}
-	else
-	{
+	//TJB removed EnvDTE because it doesn't seem to run in T4 with .net core anymore
+	//EnvDTE.Project project=GetCurrentProject();
+	//if (project != null)
+	//{
+	//	return System.IO.Path.GetDirectoryName(project.FileName)+"\\App_Data\\";
+	//}
+	//else
+	//{
 		return GetProjectPath() + "\\App_Data\\";
-	}
+	//}
 }
 
 static string zap_password(string connectionString)
