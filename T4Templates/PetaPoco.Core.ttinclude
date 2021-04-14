@@ -276,6 +276,10 @@ public string ConnectionString
 		InitConnectionString();
         return _connectionString;
     }
+	set
+	{
+		_connectionString = value;
+	}
 }
 
 public string ProviderName
@@ -285,6 +289,10 @@ public string ProviderName
 		InitConnectionString();
         return _providerName;
     }
+	set
+	{
+		_providerName = value;
+	}
 }
 //TJB removed EnvDTE because it doesn't seem to run in T4 with .net core anymore
 /*

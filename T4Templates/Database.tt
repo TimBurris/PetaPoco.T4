@@ -1,7 +1,13 @@
 <#@ include file="PetaPoco.Core.ttinclude" #>
 <#
 	// Settings
-    ConnectionStringName = "";			// Uses last connection string in config if not specified
+
+	//use connectionstring from app/web.config which will get the connectionstring and the provider name
+		//ConnectionStringName = "";
+	//OR set the connectionstring and provider name manually
+		ConnectionString = "";
+		ProviderName = "";
+	
     Namespace = "";
     RepoName = "";
     GenerateOperations = true;
