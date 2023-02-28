@@ -163,6 +163,9 @@ foreach(Column col in from c in tbl.Columns where !c.Ignore select c)
 {
 		// Column bindings
 #>
+<# if (col.IsComputed) { #>
+        [PetaPoco.ResultColumn(IncludeInAutoSelect = PetaPoco.IncludeInAutoSelect.Yes)]
+<# } #>
 <# if (TrackModifiedColumns) { #>
 <# if (col.Name!=col.PropertyName) { #>
         [Column("<#=col.Name#>")] 
