@@ -143,6 +143,8 @@ public class Column
     public bool IsNullable;
 	public bool IsAutoIncrement;
 	public bool Ignore;
+	public bool IsComputed;
+	public bool GeneratedAlways;
 }
 
 public class Tables : List<Table>
@@ -590,7 +592,7 @@ class SqlServerSchemaReader : SchemaReader
 			tbl.Columns=LoadColumns(tbl);
 		            
 			// Mark the primary key
-			string PrimaryKey=GetPK(tbl.Name);
+			string PrimaryKey=GetPK(tbl.Name, tbl.Schema);
 			var pkColumn=tbl.Columns.SingleOrDefault(x=>x.Name.ToLower().Trim()==PrimaryKey.ToLower().Trim());
 			if(pkColumn!=null)
 			{
@@ -634,6 +636,8 @@ class SqlServerSchemaReader : SchemaReader
 					col.PropertyName=CleanUp(col.Name);
 					col.PropertyType=GetPropertyType(rdr["DataType"].ToString());
 					col.IsNullable=rdr["IsNullable"].ToString()=="YES";
+					col.IsComputed=((int)rdr["IsComputed"])==1; 
+					col.GeneratedAlways=((int)rdr["GeneratedAlways"])>0; //generated always columns are typically columns used in temporal (history) tables; they are not flagged by sql server as "computed", but instead as GeneratedAlways
 					col.IsAutoIncrement=((int)rdr["IsIdentity"])==1 || 
 							(!DBNull.Value.Equals(rdr["DefaultSetting"]) && ((string)rdr["DefaultSetting"] == "(newsequentialid())" ||
 							(string)rdr["DefaultSetting"] == "(newid())"));
@@ -645,14 +649,15 @@ class SqlServerSchemaReader : SchemaReader
 		}
 	}
 
-	string GetPK(string table){
+	string GetPK(string table, string schema){
 		
 		string sql=@"SELECT c.name AS ColumnName
-                FROM sys.indexes AS i 
-                INNER JOIN sys.index_columns AS ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id 
-                INNER JOIN sys.objects AS o ON i.object_id = o.object_id 
+                 FROM sys.indexes AS i
+                INNER JOIN sys.index_columns AS ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+                INNER JOIN sys.objects AS o ON i.object_id = o.object_id
+                INNER JOIN sys.schemas AS s ON o.schema_id = s.schema_id
                 LEFT OUTER JOIN sys.columns AS c ON ic.object_id = c.object_id AND c.column_id = ic.column_id
-                WHERE (i.is_primary_key = 1) AND (o.name = @tableName)";
+                WHERE (i.is_primary_key = 1) AND (o.name = @tableName) AND (s.name = @schemaName)";
 
 		using (var cmd=_factory.CreateCommand())
 		{
@@ -662,6 +667,11 @@ class SqlServerSchemaReader : SchemaReader
 			var p = cmd.CreateParameter();
 			p.ParameterName = "@tableName";
 			p.Value=table;
+			cmd.Parameters.Add(p);
+
+			p = cmd.CreateParameter();
+			p.ParameterName = "@schemaName";
+			p.Value=schema;
 			cmd.Parameters.Add(p);
 
 			var result=cmd.ExecuteScalar();
@@ -752,7 +762,8 @@ class SqlServerSchemaReader : SchemaReader
 			CHARACTER_MAXIMUM_LENGTH AS MaxLength, 
 			DATETIME_PRECISION AS DatePrecision,
 			COLUMNPROPERTY(object_id('[' + TABLE_SCHEMA + '].[' + TABLE_NAME + ']'), COLUMN_NAME, 'IsIdentity') AS IsIdentity,
-			COLUMNPROPERTY(object_id('[' + TABLE_SCHEMA + '].[' + TABLE_NAME + ']'), COLUMN_NAME, 'IsComputed') as IsComputed
+			COLUMNPROPERTY(object_id('[' + TABLE_SCHEMA + '].[' + TABLE_NAME + ']'), COLUMN_NAME, 'IsComputed') as IsComputed,
+			COLUMNPROPERTY(object_id('[' + TABLE_SCHEMA + '].[' + TABLE_NAME + ']'), COLUMN_NAME, 'GeneratedAlwaysType') as GeneratedAlways
 		FROM  INFORMATION_SCHEMA.COLUMNS
 		WHERE TABLE_NAME=@tableName AND TABLE_SCHEMA=@schemaName
 		ORDER BY OrdinalPosition ASC";
@@ -796,7 +807,7 @@ class SqlServerCeSchemaReader : SchemaReader
 			tbl.Columns=LoadColumns(tbl);
 		            
 			// Mark the primary key
-			string PrimaryKey=GetPK(tbl.Name);
+			string PrimaryKey=GetPK(tbl.Name, tbl.Schema);
 			var pkColumn=tbl.Columns.SingleOrDefault(x=>x.Name.ToLower().Trim()==PrimaryKey.ToLower().Trim());
 			if(pkColumn!=null)
 				pkColumn.IsPK=true;
@@ -842,14 +853,14 @@ class SqlServerCeSchemaReader : SchemaReader
 		}
 	}
 
-	string GetPK(string table){
+	string GetPK(string table, string schema){
 		
 		string sql=@"SELECT KCU.COLUMN_NAME 
 			FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU
 			JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS TC
 			ON KCU.CONSTRAINT_NAME=TC.CONSTRAINT_NAME
 			WHERE TC.CONSTRAINT_TYPE='PRIMARY KEY'
-			AND KCU.TABLE_NAME=@tableName";
+			AND KCU.TABLE_NAME=@tableName AND KCU.TABLE_SCHEMA=@schemaName";
 
 		using (var cmd=_factory.CreateCommand())
 		{
@@ -859,6 +870,11 @@ class SqlServerCeSchemaReader : SchemaReader
 			var p = cmd.CreateParameter();
 			p.ParameterName = "@tableName";
 			p.Value=table;
+			cmd.Parameters.Add(p);
+			
+			p = cmd.CreateParameter();
+			p.ParameterName = "@schemaName";
+			p.Value=schema;
 			cmd.Parameters.Add(p);
 
 			var result=cmd.ExecuteScalar();
@@ -982,7 +998,7 @@ class PostGreSqlSchemaReader : SchemaReader
 			tbl.Columns=LoadColumns(tbl);
 		            
 			// Mark the primary key
-			string PrimaryKey=GetPK(tbl.Name);
+			string PrimaryKey=GetPK(tbl.Name, tbl.Schema);
 			var pkColumn=tbl.Columns.SingleOrDefault(x=>x.Name.ToLower().Trim()==PrimaryKey.ToLower().Trim());
 			if(pkColumn!=null)
 				pkColumn.IsPK=true;
@@ -1033,14 +1049,14 @@ class PostGreSqlSchemaReader : SchemaReader
 		}
 	}
 
-	string GetPK(string table){
+	string GetPK(string table, string schema){
 		
 		string sql=@"SELECT kcu.column_name 
 			FROM information_schema.key_column_usage kcu
 			JOIN information_schema.table_constraints tc
 			ON kcu.constraint_name=tc.constraint_name
 			WHERE lower(tc.constraint_type)='primary key'
-			AND kcu.table_name=@tablename";
+			AND kcu.table_name=@tablename AND kcu.TABLE_SCHEMA=@schemaName";
 
 		using (var cmd=_factory.CreateCommand())
 		{
@@ -1050,6 +1066,11 @@ class PostGreSqlSchemaReader : SchemaReader
 			var p = cmd.CreateParameter();
 			p.ParameterName = "@tableName";
 			p.Value=table;
+			cmd.Parameters.Add(p); 
+			
+			p = cmd.CreateParameter();
+			p.ParameterName = "@schemaName";
+			p.Value=schema;
 			cmd.Parameters.Add(p);
 
 			var result=cmd.ExecuteScalar();
@@ -1290,7 +1311,7 @@ class OracleSchemaReader : SchemaReader
 			tbl.Columns=LoadColumns(tbl);
 		            
 			// Mark the primary key
-			string PrimaryKey=GetPK(tbl.Name);
+			string PrimaryKey=GetPK(tbl.Name, tbl.Schema);
 			var pkColumn=tbl.Columns.SingleOrDefault(x=>x.Name.ToLower().Trim()==PrimaryKey.ToLower().Trim());
 			if(pkColumn!=null)
 				pkColumn.IsPK=true;
@@ -1338,7 +1359,7 @@ class OracleSchemaReader : SchemaReader
 		}
 	}
 
-	string GetPK(string table){
+	string GetPK(string table, string schema){
 		
 		string sql=@"select column_name from USER_CONSTRAINTS uc
   inner join USER_CONS_COLUMNS ucc on uc.constraint_name = ucc.constraint_name
