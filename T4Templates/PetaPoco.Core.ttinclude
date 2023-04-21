@@ -144,7 +144,6 @@ public class Column
 	public bool IsAutoIncrement;
 	public bool Ignore;
 	public bool IsComputed;
-	public bool GeneratedAlways;
 }
 
 public class Tables : List<Table>
@@ -637,7 +636,6 @@ class SqlServerSchemaReader : SchemaReader
 					col.PropertyType=GetPropertyType(rdr["DataType"].ToString());
 					col.IsNullable=rdr["IsNullable"].ToString()=="YES";
 					col.IsComputed=((int)rdr["IsComputed"])==1; 
-					col.GeneratedAlways=((int)rdr["GeneratedAlways"])>0; //generated always columns are typically columns used in temporal (history) tables; they are not flagged by sql server as "computed", but instead as GeneratedAlways
 					col.IsAutoIncrement=((int)rdr["IsIdentity"])==1 || 
 							(!DBNull.Value.Equals(rdr["DefaultSetting"]) && ((string)rdr["DefaultSetting"] == "(newsequentialid())" ||
 							(string)rdr["DefaultSetting"] == "(newid())"));
@@ -762,8 +760,7 @@ class SqlServerSchemaReader : SchemaReader
 			CHARACTER_MAXIMUM_LENGTH AS MaxLength, 
 			DATETIME_PRECISION AS DatePrecision,
 			COLUMNPROPERTY(object_id('[' + TABLE_SCHEMA + '].[' + TABLE_NAME + ']'), COLUMN_NAME, 'IsIdentity') AS IsIdentity,
-			COLUMNPROPERTY(object_id('[' + TABLE_SCHEMA + '].[' + TABLE_NAME + ']'), COLUMN_NAME, 'IsComputed') as IsComputed,
-			COLUMNPROPERTY(object_id('[' + TABLE_SCHEMA + '].[' + TABLE_NAME + ']'), COLUMN_NAME, 'GeneratedAlwaysType') as GeneratedAlways
+			COLUMNPROPERTY(object_id('[' + TABLE_SCHEMA + '].[' + TABLE_NAME + ']'), COLUMN_NAME, 'IsComputed') as IsComputed
 		FROM  INFORMATION_SCHEMA.COLUMNS
 		WHERE TABLE_NAME=@tableName AND TABLE_SCHEMA=@schemaName
 		ORDER BY OrdinalPosition ASC";

@@ -166,9 +166,6 @@ foreach(Column col in from c in tbl.Columns where !c.Ignore select c)
 <# if (col.IsComputed) { #>
         [PetaPoco.ResultColumn(IncludeInAutoSelect = PetaPoco.IncludeInAutoSelect.Yes)]
 <# } #>
-<# else if (col.GeneratedAlways) { #>
-        [PetaPoco.ResultColumn(IncludeInAutoSelect = PetaPoco.IncludeInAutoSelect.No)]
-<# } #>
 <# if (TrackModifiedColumns) { #>
 <# if (col.Name!=col.PropertyName) { #>
         [Column("<#=col.Name#>")] 
