@@ -97,6 +97,8 @@ bool GenerateCommon = true;
 bool GeneratePocos = true;
 bool ExplicitColumns = true;
 bool TrackModifiedColumns = false;
+bool NullReferenceTypesEnabled = false;
+
 string[] ExcludePrefix = new string[] {};
 
 
@@ -190,14 +192,14 @@ static Func<string, string> CleanUp = (str) =>
     return str;
 };
 
-string CheckNullable(Column col)
+string CheckNullable(Column col, bool nullReferenceTypesEnabled)
 {
     string result="";
-    if(col.IsNullable && 
+    if(col.IsNullable && (nullReferenceTypesEnabled || (
 		col.PropertyType !="byte[]" && 
 		col.PropertyType !="string" &&
 		col.PropertyType !="Microsoft.SqlServer.Types.SqlGeography" &&
-		col.PropertyType !="Microsoft.SqlServer.Types.SqlGeometry"
+		col.PropertyType !="Microsoft.SqlServer.Types.SqlGeometry"))
 		)
         result="?";
     return result;

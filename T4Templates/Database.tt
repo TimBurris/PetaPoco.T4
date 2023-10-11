@@ -17,6 +17,8 @@
 	ClassSuffix = "";
 	TrackModifiedColumns = false;
 	ExplicitColumns = true;
+	NullReferenceTypesEnabled = false;
+
 	ExcludePrefix = new string[] {}; // Exclude tables by prefix.
 
     // Read schema

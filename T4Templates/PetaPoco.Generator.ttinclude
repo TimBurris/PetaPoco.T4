@@ -174,7 +174,7 @@ foreach(Column col in from c in tbl.Columns where !c.Ignore select c)
         [Column] 
 <# } #>
 <# } #>
-		public <#=col.PropertyType #><#=CheckNullable(col)#> <#=col.PropertyName #> 
+		public <#=col.PropertyType #><#=CheckNullable(col, NullReferenceTypesEnabled)#> <#=col.PropertyName #> 
 		{ 
 			get
 			{
@@ -186,13 +186,13 @@ foreach(Column col in from c in tbl.Columns where !c.Ignore select c)
 				MarkColumnModified("<#=col.Name#>");
 			}
 		}
-		<#=col.PropertyType #><#=CheckNullable(col)#> _<#=col.PropertyName #>;
+		<#=col.PropertyType #><#=CheckNullable(col, NullReferenceTypesEnabled)#> _<#=col.PropertyName #>;
 
 <# } else { #>
 <# if (col.Name!=col.PropertyName) { #>
-		[Column("<#=col.Name#>")] public <#=col.PropertyType #><#=CheckNullable(col)#> <#=col.PropertyName #> { get; set; }
+		[Column("<#=col.Name#>")] public <#=col.PropertyType #><#=CheckNullable(col, NullReferenceTypesEnabled)#> <#=col.PropertyName #> { get; set; }
 <# } else { #>
-		<# if (ExplicitColumns) { #>[Column] <# } #>public <#=col.PropertyType #><#=CheckNullable(col)#> <#=col.PropertyName #> { get; set; }
+		<# if (ExplicitColumns) { #>[Column] <# } #>public <#=col.PropertyType #><#=CheckNullable(col, NullReferenceTypesEnabled)#> <#=col.PropertyName #> { get; set; }
 <# } #>
 <# } #>
 <# } #>
